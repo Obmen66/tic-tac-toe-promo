@@ -30,7 +30,23 @@ const processedEvents = new Map();
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://telegram.org'],
+        styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'", 'https://t.me', 'https://telegram.org'],
+        frameAncestors: ["'self'", 'https://t.me', 'https://web.telegram.org', 'https://telegram.org'],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(express.json({ limit: '20kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -183,7 +199,11 @@ async function sendTelegramMessage(text, chatId) {
 }
 
 function queueTelegramMessage(text, chatId) {
-  if (!text || !chatId) return;
+  if (!text) return;
+  if (!chatId) {
+    console.warn('Telegram chatId missing; message skipped.');
+    return;
+  }
 
   void sendTelegramMessage(text, chatId).catch((error) => {
     console.error('Failed to send Telegram message:', error);
@@ -195,6 +215,12 @@ app.get('/healthz', (req, res) => {
 });
 
 app.post('/api/result', (req, res) => {
+  console.log('Result request received', {
+    hasInitData: Boolean(req.get('X-TG-INIT-DATA')),
+    hasUserId: Boolean(req.get('X-TG-USER-ID')),
+    ip: req.ip,
+  });
+
   const parsed = RESULT_SCHEMA.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ status: 'error', message: 'Invalid payload' });
@@ -225,8 +251,8 @@ app.post('/api/result', (req, res) => {
     return res.status(401).json({ status: 'error', message: 'Telegram init data required' });
   }
 
-  if (!resolvedUserId && validationFailed) {
-    console.warn('No Telegram user resolved from init data.');
+  if (!resolvedUserId) {
+    console.warn('No Telegram user resolved from init data or fallback header.');
   }
 
   const sessionId = resolvedUserId ? `tg:${resolvedUserId}` : getSessionId(req, res);
@@ -269,6 +295,19 @@ app.post('/api/result', (req, res) => {
     console.error('Failed to process result:', error);
     return res.status(500).json({ status: 'error', message: 'Internal error' });
   }
+});
+
+app.post('/api/client-log', (req, res) => {
+  const payload = req.body || {};
+  console.log('Client log', {
+    stage: payload.stage,
+    hasTelegram: Boolean(payload.hasTelegram),
+    hasInitData: Boolean(payload.hasInitData),
+    hasUnsafeUser: Boolean(payload.hasUnsafeUser),
+    userId: payload.userId || null,
+    ua: req.get('user-agent') || '',
+  });
+  res.json({ status: 'ok' });
 });
 
 app.listen(port, () => {

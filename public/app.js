@@ -50,6 +50,22 @@ function getUnsafeUserId() {
   return id ? String(id) : '';
 }
 
+function reportClientLog(stage) {
+  fetch('/api/client-log', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      stage,
+      hasTelegram: Boolean(tg),
+      hasInitData: Boolean(getInitData()),
+      hasUnsafeUser: Boolean(getUnsafeUserId()),
+      userId: getUnsafeUserId() || null,
+    }),
+  }).catch(() => {});
+}
+
 function setStatus(text) {
   statusEl.textContent = text;
 }
@@ -409,3 +425,4 @@ modal.addEventListener('click', (event) => {
 
 updateStarterButtons(initialStarter);
 resetGame();
+reportClientLog('boot');
