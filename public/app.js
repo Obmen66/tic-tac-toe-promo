@@ -45,6 +45,11 @@ function getInitData() {
   return tg?.initData || '';
 }
 
+function getUnsafeUserId() {
+  const id = tg?.initDataUnsafe?.user?.id;
+  return id ? String(id) : '';
+}
+
 function setStatus(text) {
   statusEl.textContent = text;
 }
@@ -108,6 +113,7 @@ async function reportResult(result, eventId) {
     headers: {
       'Content-Type': 'application/json',
       'X-TG-INIT-DATA': getInitData(),
+      'X-TG-USER-ID': getUnsafeUserId(),
     },
     body: JSON.stringify(payload),
   });

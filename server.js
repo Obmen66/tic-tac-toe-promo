@@ -114,7 +114,21 @@ function getBotToken() {
   return process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_TOKEN;
 }
 
-function getTelegramUserFromRequest(req) {
+function parseTelegramUser(initData) {
+  if (!initData) return null;
+
+  const params = new URLSearchParams(initData);
+  const userJson = params.get('user');
+  if (!userJson) return null;
+
+  try {
+    return JSON.parse(userJson);
+  } catch (error) {
+    return null;
+  }
+}
+
+function getTelegramUserFromRequest(req, { allowUnverified = false } = {}) {
   const initData = req.get('X-TG-INIT-DATA') || '';
   if (!initData) return null;
 
@@ -123,13 +137,16 @@ function getTelegramUserFromRequest(req) {
     throw new Error('Missing TELEGRAM_BOT_TOKEN or TELEGRAM_TOKEN');
   }
 
-  validate(initData, token, { expiresIn: 60 * 60 });
+  try {
+    validate(initData, token, { expiresIn: 24 * 60 * 60 });
+  } catch (error) {
+    if (!allowUnverified) {
+      throw error;
+    }
+    return parseTelegramUser(initData);
+  }
 
-  const params = new URLSearchParams(initData);
-  const userJson = params.get('user');
-  if (!userJson) return null;
-
-  return JSON.parse(userJson);
+  return parseTelegramUser(initData);
 }
 
 async function sendTelegramMessage(text, chatId) {
@@ -188,9 +205,11 @@ app.post('/api/result', (req, res) => {
 
   let tgUser = null;
   const allowFallback = ALLOW_FALLBACK_CHAT_ID || process.env.NODE_ENV !== 'production';
+  let validationFailed = false;
   try {
-    tgUser = getTelegramUserFromRequest(req);
+    tgUser = getTelegramUserFromRequest(req, { allowUnverified: allowFallback });
   } catch (error) {
+    validationFailed = true;
     console.warn('Invalid Telegram init data:', error.message || error);
     if (!allowFallback) {
       return res.status(401).json({ status: 'error', message: 'Invalid Telegram init data' });
@@ -198,12 +217,20 @@ app.post('/api/result', (req, res) => {
     tgUser = null;
   }
 
-  if (!tgUser && !allowFallback) {
+  const fallbackUserIdRaw = allowFallback ? req.get('X-TG-USER-ID') || '' : '';
+  const fallbackUserId = /^\d+$/.test(fallbackUserIdRaw.trim()) ? fallbackUserIdRaw.trim() : null;
+
+  const resolvedUserId = tgUser?.id || fallbackUserId;
+  if (!resolvedUserId && !allowFallback) {
     return res.status(401).json({ status: 'error', message: 'Telegram init data required' });
   }
 
-  const sessionId = tgUser ? `tg:${tgUser.id}` : getSessionId(req, res);
-  const chatId = tgUser?.id || (allowFallback ? process.env.TELEGRAM_CHAT_ID : null);
+  if (!resolvedUserId && validationFailed) {
+    console.warn('No Telegram user resolved from init data.');
+  }
+
+  const sessionId = resolvedUserId ? `tg:${resolvedUserId}` : getSessionId(req, res);
+  const chatId = resolvedUserId || (allowFallback ? process.env.TELEGRAM_CHAT_ID : null);
 
   if (eventId) {
     const cached = processedEvents.get(eventId);
