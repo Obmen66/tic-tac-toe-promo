@@ -381,6 +381,14 @@ h1 {
   border-radius: 18px;
 }
 
+.promo[hidden] {
+  display: none !important;
+}
+
+.promo-hint[hidden] {
+  display: none !important;
+}
+
 .coupon {
   width: 100%;
   background: rgba(255, 255, 255, 0.75);
