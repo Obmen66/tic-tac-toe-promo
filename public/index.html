@@ -83,14 +83,28 @@
       <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <button class="modal__close" id="modalClose" aria-label="Закрыть">×</button>
         <h2 id="modalTitle">Победа!</h2>
-        <p id="modalText">Ваш промокод на скидку:</p>
+        <p id="modalText" class="modal__text">Ваш промокод на скидку:</p>
         <div class="promo" id="promoWrap" hidden>
-          <span id="promoCode"></span>
-          <button class="btn btn--primary" id="copyButton">Скопировать</button>
+          <div class="coupon">
+            <span class="coupon__label">Промокод</span>
+            <span id="promoCode" class="coupon__code"></span>
+          </div>
+          <div class="coupon__actions">
+            <button class="btn btn--primary" id="copyButton">Копировать</button>
+            <a class="btn btn--ghost" id="telegramShare" href="#" target="_blank" rel="noopener">
+              Отправить себе в Telegram
+            </a>
+          </div>
+          <div class="copy-status" id="copyStatus" aria-live="polite"></div>
+          <p class="promo-hint" id="promoHint">
+            Вставь промокод на оплате — скидка применится автоматически.
+          </p>
         </div>
         <button class="btn btn--accent" id="playAgain">Сыграть ещё раз</button>
       </div>
     </div>
+
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
 
     <script type="module" src="app.js"></script>
   </body>

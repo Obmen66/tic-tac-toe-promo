@@ -17,8 +17,12 @@ const modalText = document.getElementById('modalText');
 const promoWrap = document.getElementById('promoWrap');
 const promoCodeEl = document.getElementById('promoCode');
 const copyButton = document.getElementById('copyButton');
+const copyStatus = document.getElementById('copyStatus');
+const promoHint = document.getElementById('promoHint');
+const telegramShare = document.getElementById('telegramShare');
 const playAgainButton = document.getElementById('playAgain');
 const modalCloseButton = document.getElementById('modalClose');
+const confettiEl = document.getElementById('confetti');
 
 let board = Array(9).fill(null);
 let previousBoard = Array(9).fill(null);
@@ -28,6 +32,11 @@ let currentPromoCode = '';
 let difficulty = difficultySelect ? difficultySelect.value : 'normal';
 let playerStarts = initialStarter !== 'computer';
 let computerTimer = null;
+let winTimer = null;
+
+const prefersReducedMotion = window.matchMedia
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : { matches: false };
 
 function setStatus(text) {
   statusEl.textContent = text;
@@ -68,6 +77,13 @@ function clearComputerTimer() {
   }
 }
 
+function clearWinTimer() {
+  if (winTimer) {
+    clearTimeout(winTimer);
+    winTimer = null;
+  }
+}
+
 function createEventId() {
   if (window.crypto && typeof window.crypto.randomUUID === 'function') {
     return window.crypto.randomUUID();
@@ -103,10 +119,19 @@ function setModalContent(title, text, promoCode = '') {
   if (promoCode) {
     promoWrap.hidden = false;
     promoCodeEl.textContent = promoCode;
-    copyButton.textContent = 'Скопировать';
+    copyButton.textContent = 'Копировать';
+    if (copyStatus) copyStatus.textContent = '';
+    if (promoHint) promoHint.hidden = false;
+    if (telegramShare) {
+      const shareText = `Мой промокод: ${promoCode}. Вставь промокод на оплате — скидка применится автоматически.`;
+      telegramShare.href = `https://t.me/share/url?text=${encodeURIComponent(shareText)}`;
+    }
   } else {
     promoWrap.hidden = true;
     promoCodeEl.textContent = '';
+    if (copyStatus) copyStatus.textContent = '';
+    if (promoHint) promoHint.hidden = true;
+    if (telegramShare) telegramShare.href = '#';
   }
 }
 
@@ -139,10 +164,48 @@ function handleCopy() {
   }
 
   const originalText = copyButton.textContent;
-  copyButton.textContent = 'Скопировано';
+  copyButton.textContent = 'Скопировано ✓';
+  if (copyStatus) copyStatus.textContent = 'Скопировано ✓';
   setTimeout(() => {
     copyButton.textContent = originalText;
+    if (copyStatus) copyStatus.textContent = '';
   }, 1200);
+}
+
+function launchConfetti() {
+  if (!confettiEl || prefersReducedMotion.matches) return;
+
+  confettiEl.innerHTML = '';
+  confettiEl.classList.add('confetti--active');
+
+  const colors = ['#f6c1d1', '#e7c4ea', '#bfe3d1', '#f7d7aa', '#cbb4e6'];
+  const count = 18;
+
+  for (let i = 0; i < count; i += 1) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti__piece';
+    const left = Math.random() * 100;
+    const size = 6 + Math.random() * 6;
+    const drift = Math.floor(Math.random() * 120 - 60);
+    const delay = Math.random() * 0.2;
+    const duration = 0.9 + Math.random() * 0.6;
+    const rotate = Math.floor(Math.random() * 360);
+    const color = colors[i % colors.length];
+
+    piece.style.setProperty('--x', `${left}%`);
+    piece.style.setProperty('--size', `${size}px`);
+    piece.style.setProperty('--drift', `${drift}px`);
+    piece.style.setProperty('--delay', `${delay}s`);
+    piece.style.setProperty('--duration', `${duration}s`);
+    piece.style.setProperty('--rotate', `${rotate}deg`);
+    piece.style.setProperty('--color', color);
+    confettiEl.appendChild(piece);
+  }
+
+  setTimeout(() => {
+    confettiEl.classList.remove('confetti--active');
+    confettiEl.innerHTML = '';
+  }, 1700);
 }
 
 async function handleWin() {
@@ -194,7 +257,12 @@ function endGame(outcome) {
   }
 
   if (outcome.winner === 'X') {
-    handleWin();
+    const delay = Math.floor(200 + Math.random() * 151);
+    clearWinTimer();
+    winTimer = setTimeout(() => {
+      launchConfetti();
+      handleWin();
+    }, delay);
   } else {
     handleLoss();
   }
@@ -256,12 +324,17 @@ function updateStarterButtons(selected) {
 
 function resetGame() {
   clearComputerTimer();
+  clearWinTimer();
   board = Array(9).fill(null);
   previousBoard = Array(9).fill(null);
   gameOver = false;
   isLocked = false;
   currentPromoCode = '';
   promoCodeEl.textContent = '';
+  if (confettiEl) {
+    confettiEl.classList.remove('confetti--active');
+    confettiEl.innerHTML = '';
+  }
   clearWinHighlight();
   closeModal();
 
