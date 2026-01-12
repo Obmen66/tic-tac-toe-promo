@@ -6,7 +6,9 @@ const statusEl = document.getElementById('status');
 const resetButton = document.getElementById('reset');
 const difficultySelect = document.getElementById('difficulty');
 const starterButtons = Array.from(document.querySelectorAll('[data-starter]'));
-const initialStarterButton = starterButtons.find((button) => button.classList.contains('is-active'));
+const initialStarterButton = starterButtons.find((button) =>
+  button.classList.contains('is-active')
+);
 const initialStarter = initialStarterButton ? initialStarterButton.dataset.starter : 'player';
 
 const modal = document.getElementById('resultModal');

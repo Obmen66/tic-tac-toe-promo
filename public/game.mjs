@@ -27,7 +27,11 @@ const difficultySettings = {
 function evaluateBoard(currentBoard) {
   for (const combo of winningCombos) {
     const [a, b, c] = combo;
-    if (currentBoard[a] && currentBoard[a] === currentBoard[b] && currentBoard[a] === currentBoard[c]) {
+    if (
+      currentBoard[a] &&
+      currentBoard[a] === currentBoard[b] &&
+      currentBoard[a] === currentBoard[c]
+    ) {
       return { winner: currentBoard[a], combo, isDraw: false };
     }
   }
