@@ -219,7 +219,7 @@ app.post('/api/result', (req, res) => {
         telegramMessage = `Победа! Промокод выдан:${code}`;
       }
     } else if (result === 'loss') {
-      telegramMessage = 'проигрыш';
+      telegramMessage = 'проигрыш. Сыграть ещё раз?';
     }
 
     if (eventId) {
