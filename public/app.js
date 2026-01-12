@@ -178,34 +178,50 @@ function launchConfetti() {
   confettiEl.innerHTML = '';
   confettiEl.classList.add('confetti--active');
 
-  const colors = ['#f6c1d1', '#e7c4ea', '#bfe3d1', '#f7d7aa', '#cbb4e6'];
-  const count = 18;
+  const colors = ['#ffb5c7', '#ffd6a6', '#c4f1d8', '#b4d7ff', '#f5c0ff', '#ffe6f1'];
 
-  for (let i = 0; i < count; i += 1) {
-    const piece = document.createElement('span');
-    piece.className = 'confetti__piece';
-    const left = Math.random() * 100;
-    const size = 6 + Math.random() * 6;
-    const drift = Math.floor(Math.random() * 120 - 60);
-    const delay = Math.random() * 0.2;
-    const duration = 0.9 + Math.random() * 0.6;
-    const rotate = Math.floor(Math.random() * 360);
-    const color = colors[i % colors.length];
+  const spawnBatch = (count, delayOffset = 0) => {
+    for (let i = 0; i < count; i += 1) {
+      const piece = document.createElement('span');
+      piece.className = 'confetti__piece';
 
-    piece.style.setProperty('--x', `${left}%`);
-    piece.style.setProperty('--size', `${size}px`);
-    piece.style.setProperty('--drift', `${drift}px`);
-    piece.style.setProperty('--delay', `${delay}s`);
-    piece.style.setProperty('--duration', `${duration}s`);
-    piece.style.setProperty('--rotate', `${rotate}deg`);
-    piece.style.setProperty('--color', color);
-    confettiEl.appendChild(piece);
-  }
+      const startX = 50 + (Math.random() - 0.5) * 26;
+      const startY = 38 + Math.random() * 10;
+      const burstX = Math.round((Math.random() - 0.5) * 260);
+      const burstY = Math.round(-120 - Math.random() * 120);
+      const drift = Math.round((Math.random() - 0.5) * 320);
+      const delay = delayOffset + Math.random() * 0.18;
+      const duration = 1.4 + Math.random() * 0.9;
+      const rotate = Math.floor(Math.random() * 360);
+      const isRound = Math.random() > 0.75;
+      const isStreamer = Math.random() > 0.65;
+      const width = isStreamer ? 6 + Math.random() * 4 : 6 + Math.random() * 8;
+      const height = isStreamer ? 14 + Math.random() * 12 : 6 + Math.random() * 8;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      piece.style.setProperty('--start-x', `${startX}%`);
+      piece.style.setProperty('--start-y', `${startY}%`);
+      piece.style.setProperty('--burst-x', `${burstX}px`);
+      piece.style.setProperty('--burst-y', `${burstY}px`);
+      piece.style.setProperty('--drift', `${drift}px`);
+      piece.style.setProperty('--delay', `${delay}s`);
+      piece.style.setProperty('--duration', `${duration}s`);
+      piece.style.setProperty('--rotate', `${rotate}deg`);
+      piece.style.setProperty('--color', color);
+      piece.style.setProperty('--w', `${Math.round(width)}px`);
+      piece.style.setProperty('--h', `${Math.round(height)}px`);
+      piece.style.setProperty('--radius', isRound ? '50%' : '4px');
+      confettiEl.appendChild(piece);
+    }
+  };
+
+  spawnBatch(56, 0);
+  spawnBatch(32, 0.12);
 
   setTimeout(() => {
     confettiEl.classList.remove('confetti--active');
     confettiEl.innerHTML = '';
-  }, 1700);
+  }, 2200);
 }
 
 async function handleWin() {
