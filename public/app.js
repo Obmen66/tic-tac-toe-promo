@@ -33,6 +33,7 @@ let difficulty = difficultySelect ? difficultySelect.value : 'normal';
 let playerStarts = initialStarter !== 'computer';
 let computerTimer = null;
 let winTimer = null;
+let telegramShareUrl = '';
 
 const prefersReducedMotion = window.matchMedia
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -154,7 +155,8 @@ function setModalContent(title, text, promoCode = '') {
     if (promoHint) promoHint.hidden = false;
     if (telegramShare) {
       const shareText = `Мой промокод: ${promoCode}. Вставь промокод на оплате — скидка применится автоматически.`;
-      telegramShare.href = `https://t.me/share/url?text=${encodeURIComponent(shareText)}`;
+      telegramShareUrl = `https://t.me/share/url?text=${encodeURIComponent(shareText)}`;
+      telegramShare.href = telegramShareUrl;
     }
   } else {
     promoWrap.hidden = true;
@@ -162,6 +164,7 @@ function setModalContent(title, text, promoCode = '') {
     if (copyStatus) copyStatus.textContent = '';
     if (promoHint) promoHint.hidden = true;
     if (telegramShare) telegramShare.href = '#';
+    telegramShareUrl = '';
   }
 }
 
@@ -422,6 +425,16 @@ modal.addEventListener('click', (event) => {
     closeModal();
   }
 });
+
+if (telegramShare) {
+  telegramShare.addEventListener('click', (event) => {
+    if (!telegramShareUrl) return;
+    if (tg?.openTelegramLink) {
+      event.preventDefault();
+      tg.openTelegramLink(telegramShareUrl);
+    }
+  });
+}
 
 updateStarterButtons(initialStarter);
 resetGame();
