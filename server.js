@@ -205,9 +205,31 @@ function queueTelegramMessage(text, chatId) {
     return;
   }
 
+  console.log('Telegram send queued', { chatId: String(chatId), text });
+
   void sendTelegramMessage(text, chatId).catch((error) => {
     console.error('Failed to send Telegram message:', error);
   });
+}
+
+async function verifyTelegramToken() {
+  const token = getBotToken();
+  if (!token) {
+    console.warn('Telegram token is missing; bot checks skipped.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('Telegram getMe failed:', data);
+    } else {
+      console.log('Telegram bot OK:', data?.result?.username || data?.result?.id || 'unknown');
+    }
+  } catch (error) {
+    console.error('Telegram getMe error:', error);
+  }
 }
 
 app.get('/healthz', (req, res) => {
@@ -312,4 +334,5 @@ app.post('/api/client-log', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
+  verifyTelegramToken();
 });
