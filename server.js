@@ -187,19 +187,23 @@ app.post('/api/result', (req, res) => {
   pruneExpired();
 
   let tgUser = null;
+  const allowFallback = ALLOW_FALLBACK_CHAT_ID || process.env.NODE_ENV !== 'production';
   try {
     tgUser = getTelegramUserFromRequest(req);
   } catch (error) {
     console.warn('Invalid Telegram init data:', error.message || error);
-    return res.status(401).json({ status: 'error', message: 'Invalid Telegram init data' });
+    if (!allowFallback) {
+      return res.status(401).json({ status: 'error', message: 'Invalid Telegram init data' });
+    }
+    tgUser = null;
   }
 
-  if (!tgUser && !ALLOW_FALLBACK_CHAT_ID) {
+  if (!tgUser && !allowFallback) {
     return res.status(401).json({ status: 'error', message: 'Telegram init data required' });
   }
 
   const sessionId = tgUser ? `tg:${tgUser.id}` : getSessionId(req, res);
-  const chatId = tgUser?.id || process.env.TELEGRAM_CHAT_ID;
+  const chatId = tgUser?.id || (allowFallback ? process.env.TELEGRAM_CHAT_ID : null);
 
   if (eventId) {
     const cached = processedEvents.get(eventId);
