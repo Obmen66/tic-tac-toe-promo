@@ -39,6 +39,7 @@ const prefersReducedMotion = window.matchMedia
   : { matches: false };
 
 const tg = window.Telegram?.WebApp;
+tg?.ready?.();
 
 function getInitData() {
   return tg?.initData || '';

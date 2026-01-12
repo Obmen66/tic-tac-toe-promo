@@ -17,6 +17,7 @@ const port = process.env.PORT || 3000;
 const PROMO_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const SESSION_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const EVENT_TTL_MS = 24 * 60 * 60 * 1000;
+const ALLOW_FALLBACK_CHAT_ID = process.env.ALLOW_FALLBACK_CHAT_ID === 'true';
 
 const RESULT_SCHEMA = z.object({
   result: z.enum(['win', 'loss', 'draw']),
@@ -28,6 +29,7 @@ const issuedCodes = new Map();
 const processedEvents = new Map();
 
 app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(express.json({ limit: '20kb' }));
 app.use(cookieParser());
@@ -190,6 +192,10 @@ app.post('/api/result', (req, res) => {
   } catch (error) {
     console.warn('Invalid Telegram init data:', error.message || error);
     return res.status(401).json({ status: 'error', message: 'Invalid Telegram init data' });
+  }
+
+  if (!tgUser && !ALLOW_FALLBACK_CHAT_ID) {
+    return res.status(401).json({ status: 'error', message: 'Telegram init data required' });
   }
 
   const sessionId = tgUser ? `tg:${tgUser.id}` : getSessionId(req, res);
