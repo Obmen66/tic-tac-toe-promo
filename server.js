@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const { z } = require('zod');
+const { validate } = require('@tma.js/init-data-node');
 
 dotenv.config();
 
@@ -107,9 +108,30 @@ function generateUniquePromoCode() {
   throw new Error('Failed to generate unique promo code');
 }
 
-async function sendTelegramMessage(text) {
-  const token = process.env.TELEGRAM_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+function getBotToken() {
+  return process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_TOKEN;
+}
+
+function getTelegramUserFromRequest(req) {
+  const initData = req.get('X-TG-INIT-DATA') || '';
+  if (!initData) return null;
+
+  const token = getBotToken();
+  if (!token) {
+    throw new Error('Missing TELEGRAM_BOT_TOKEN or TELEGRAM_TOKEN');
+  }
+
+  validate(initData, token, { expiresIn: 60 * 60 });
+
+  const params = new URLSearchParams(initData);
+  const userJson = params.get('user');
+  if (!userJson) return null;
+
+  return JSON.parse(userJson);
+}
+
+async function sendTelegramMessage(text, chatId) {
+  const token = getBotToken();
 
   if (!token || !chatId) {
     console.warn('Telegram config is missing; message skipped.');
@@ -126,7 +148,7 @@ async function sendTelegramMessage(text) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        chat_id: chatId,
+        chat_id: String(chatId),
         text,
       }),
       signal: controller.signal,
@@ -141,10 +163,10 @@ async function sendTelegramMessage(text) {
   }
 }
 
-function queueTelegramMessage(text) {
-  if (!text) return;
+function queueTelegramMessage(text, chatId) {
+  if (!text || !chatId) return;
 
-  void sendTelegramMessage(text).catch((error) => {
+  void sendTelegramMessage(text, chatId).catch((error) => {
     console.error('Failed to send Telegram message:', error);
   });
 }
@@ -162,7 +184,16 @@ app.post('/api/result', (req, res) => {
   const { result, eventId } = parsed.data;
   pruneExpired();
 
-  const sessionId = getSessionId(req, res);
+  let tgUser = null;
+  try {
+    tgUser = getTelegramUserFromRequest(req);
+  } catch (error) {
+    console.warn('Invalid Telegram init data:', error.message || error);
+    return res.status(401).json({ status: 'error', message: 'Invalid Telegram init data' });
+  }
+
+  const sessionId = tgUser ? `tg:${tgUser.id}` : getSessionId(req, res);
+  const chatId = tgUser?.id || process.env.TELEGRAM_CHAT_ID;
 
   if (eventId) {
     const cached = processedEvents.get(eventId);
@@ -196,7 +227,7 @@ app.post('/api/result', (req, res) => {
     }
 
     res.json(responsePayload);
-    queueTelegramMessage(telegramMessage);
+    queueTelegramMessage(telegramMessage, chatId);
   } catch (error) {
     console.error('Failed to process result:', error);
     return res.status(500).json({ status: 'error', message: 'Internal error' });

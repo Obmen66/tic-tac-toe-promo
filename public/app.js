@@ -38,6 +38,12 @@ const prefersReducedMotion = window.matchMedia
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
   : { matches: false };
 
+const tg = window.Telegram?.WebApp;
+
+function getInitData() {
+  return tg?.initData || '';
+}
+
 function setStatus(text) {
   statusEl.textContent = text;
 }
@@ -100,6 +106,7 @@ async function reportResult(result, eventId) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-TG-INIT-DATA': getInitData(),
     },
     body: JSON.stringify(payload),
   });
