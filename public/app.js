@@ -106,6 +106,7 @@ function setModalContent(title, text, promoCode = '') {
     copyButton.textContent = 'Скопировать';
   } else {
     promoWrap.hidden = true;
+    promoCodeEl.textContent = '';
   }
 }
 
@@ -260,6 +261,7 @@ function resetGame() {
   gameOver = false;
   isLocked = false;
   currentPromoCode = '';
+  promoCodeEl.textContent = '';
   clearWinHighlight();
   closeModal();
 
