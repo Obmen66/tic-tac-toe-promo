@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Крестики-нолики — промо-игра</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <header class="header">
+          <p class="eyebrow">Игра для приятного вечера</p>
+          <h1>Крестики-нолики</h1>
+          <p class="subtitle">
+            Соберите линию из трёх и получите мягкий бонус — промокод на скидку.
+          </p>
+        </header>
+
+        <div class="controls">
+          <div class="control">
+            <label for="difficulty">Сложность</label>
+            <select id="difficulty" class="select">
+              <option value="easy">Лёгкая</option>
+              <option value="normal" selected>Нормальная</option>
+              <option value="hard">Сложная</option>
+            </select>
+          </div>
+          <div class="control">
+            <span class="label">Кто начинает</span>
+            <div class="toggle" role="group" aria-label="Кто начинает">
+              <button type="button" class="toggle__btn is-active" data-starter="player" aria-pressed="true">
+                Я
+              </button>
+              <button type="button" class="toggle__btn" data-starter="computer" aria-pressed="false">
+                Компьютер
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="status" id="status">Ваш ход</div>
+          <div class="board" data-board role="grid" aria-label="Игровое поле">
+            <button class="cell" data-cell data-index="0" aria-label="Клетка 1"></button>
+            <button class="cell" data-cell data-index="1" aria-label="Клетка 2"></button>
+            <button class="cell" data-cell data-index="2" aria-label="Клетка 3"></button>
+            <button class="cell" data-cell data-index="3" aria-label="Клетка 4"></button>
+            <button class="cell" data-cell data-index="4" aria-label="Клетка 5"></button>
+            <button class="cell" data-cell data-index="5" aria-label="Клетка 6"></button>
+            <button class="cell" data-cell data-index="6" aria-label="Клетка 7"></button>
+            <button class="cell" data-cell data-index="7" aria-label="Клетка 8"></button>
+            <button class="cell" data-cell data-index="8" aria-label="Клетка 9"></button>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn--ghost" id="reset">Начать заново</button>
+        </div>
+
+        <p class="note">*Промокоды выдаются при победе и действуют ограниченное время.</p>
+      </section>
+    </main>
+
+    <div class="modal" id="resultModal" aria-hidden="true">
+      <div class="modal__backdrop" data-close></div>
+      <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal__close" id="modalClose" aria-label="Закрыть">×</button>
+        <h2 id="modalTitle">Победа!</h2>
+        <p id="modalText">Ваш промокод на скидку:</p>
+        <div class="promo" id="promoWrap" hidden>
+          <span id="promoCode">00000</span>
+          <button class="btn btn--primary" id="copyButton">Скопировать</button>
+        </div>
+        <button class="btn btn--accent" id="playAgain">Сыграть ещё раз</button>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
